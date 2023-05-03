@@ -6,6 +6,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChrilleGram.UI", "ChrilleGr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChrilleGram.Api", "ChrilleGram.Api\ChrilleGram.Api.csproj", "{A771D661-829E-4823-9A18-4C777C3D9F11}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChrilleGram.Entites", "ChrilleGram.Entites\ChrilleGram.Entites.csproj", "{D5D8E9A5-0A24-4352-B934-04E081F4C8F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -22,12 +24,16 @@ Global
 		{A771D661-829E-4823-9A18-4C777C3D9F11}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A771D661-829E-4823-9A18-4C777C3D9F11}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A771D661-829E-4823-9A18-4C777C3D9F11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5D8E9A5-0A24-4352-B934-04E081F4C8F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5D8E9A5-0A24-4352-B934-04E081F4C8F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5D8E9A5-0A24-4352-B934-04E081F4C8F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5D8E9A5-0A24-4352-B934-04E081F4C8F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		        SolutionGuid = {61F7FB11-1E47-470C-91E2-47F8143E1572}
 		SolutionGuid = {B1DB8B02-6314-48D7-A7CD-364026699A12}
+		        SolutionGuid = {61F7FB11-1E47-470C-91E2-47F8143E1572}
 	EndGlobalSection
 EndGlobal
