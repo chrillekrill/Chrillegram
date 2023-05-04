@@ -1,4 +1,4 @@
-﻿namespace ChrilleGram.Entites
+﻿namespace ChrilleGram.Entities
 {
     public class Image
     {
