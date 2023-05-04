@@ -13,6 +13,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddTransient<DataInitializer>();
+
 builder.Services.AddIdentityCore<IdentityUser>(options =>
 {
     options.Password.RequireDigit = false;
@@ -23,7 +24,20 @@ builder.Services.AddIdentityCore<IdentityUser>(options =>
     options.Password.RequiredUniqueChars = 0;
 })
     .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<Context>();
+    .AddEntityFrameworkStores<Context>()
+    .AddSignInManager<SignInManager<IdentityUser>>();
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "Cookies";
+    options.DefaultSignInScheme = "Cookies";
+})
+.AddCookie("Cookies", options =>
+{
+    options.Cookie.Name = "ChrilleGram.Cookie";
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+})
+.AddIdentityCookies();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -38,6 +52,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
