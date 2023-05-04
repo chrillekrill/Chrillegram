@@ -1,5 +1,6 @@
 ﻿using ChrilleGram.Api.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using System.Drawing;
 using System.IO;
@@ -21,6 +22,54 @@ namespace ChrilleGram.Api.Controllers
             var model = await _context.Image.ToListAsync();
 
             return Ok(model);
+        }
+
+        [HttpGet("[controller]/[action]")]
+        public IActionResult GetImage(string imagePath)
+        {
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+
+            var filePath = Path.Combine(uploadsFolder, imagePath);
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound();
+            }
+
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+
+            var mimeType = GetMimeType(filePath);
+
+            return File(fileStream, mimeType);
+        }
+
+        private static readonly Dictionary<string, string> ImageMimeTypes = new Dictionary<string, string>
+        {
+            { ".bmp", "image/bmp" },
+            { ".gif", "image/gif" },
+            { ".jpeg", "image/jpeg" },
+            { ".jpg", "image/jpeg" },
+            { ".png", "image/png" },
+            { ".svg", "image/svg+xml" },
+            { ".tiff", "image/tiff" },
+            { ".webp", "image/webp" }
+        };
+        private string GetMimeType(string filePath)
+        {
+            var provider = new FileExtensionContentTypeProvider();
+            if (!provider.TryGetContentType(filePath, out var mimeType))
+            {
+                var extension = Path.GetExtension(filePath);
+                if (ImageMimeTypes.TryGetValue(extension, out var imageMimeType))
+                {
+                    mimeType = imageMimeType;
+                }
+                else
+                {
+                    mimeType = "application/octet-stream";
+                }
+            }
+            return mimeType;
         }
 
         [HttpPost("[controller]/[action]")]
