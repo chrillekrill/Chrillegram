@@ -67,6 +67,7 @@ namespace ChrilleGram.Api.Controllers
                 var auth = await _userService.AuthenticateUserAsync(request.Email, request.Password);
                 if (auth != null)
                 {
+                    var jwt = _userService.Generate(auth);
                     return Ok(auth);
                 } else
                 {

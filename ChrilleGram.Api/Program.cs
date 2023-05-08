@@ -20,8 +20,8 @@ builder.WebHost.UseKestrel(options =>
         listenOptions.UseHttps(certificate);
     });
 });
-// Add services to the container.
 
+// Add services to the container.
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -44,6 +44,8 @@ builder.Services.AddIdentityCore<IdentityUser>(options =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<Context>()
     .AddSignInManager<SignInManager<IdentityUser>>();
+
+// Add authentication middleware to the HTTP request pipeline
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -65,6 +67,7 @@ using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetService<DataInitializer>().SeedData();
 }
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -74,8 +77,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Add authentication and authorization middleware to the HTTP request pipeline
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapControllers();
