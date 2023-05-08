@@ -1,5 +1,7 @@
 ﻿using ChrilleGram.Api.Data;
+using ChrilleGram.Api.Interfaces;
 using ChrilleGram.Api.Models;
+using ChrilleGram.Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
@@ -10,15 +12,18 @@ namespace ChrilleGram.Api.Controllers
     public class UserController : Controller
     {
         private readonly Context _context;
+        private readonly IUserService _userService;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         public UserController(UserManager<IdentityUser> userManager,
         Context context,
-        SignInManager<IdentityUser> signInManager)
+        SignInManager<IdentityUser> signInManager,
+        IUserService userService)
         {
             _userManager = userManager;
             _context = context;
             _signInManager = signInManager;
+            _userService = userService;
         }
 
         [HttpPost("[controller]/[action]")]
@@ -59,7 +64,7 @@ namespace ChrilleGram.Api.Controllers
         {
             try
             {
-                var auth = await AuthenticateUserAsync(request.Email, request.Password);
+                var auth = await _userService.AuthenticateUserAsync(request.Email, request.Password);
                 if (auth != null)
                 {
                     return Ok(auth);
@@ -73,26 +78,6 @@ namespace ChrilleGram.Api.Controllers
             }
         }
 
-        private async Task<IdentityUser?> AuthenticateUserAsync(string email, string password)
-        {
-            var currentUser = await _userManager.FindByEmailAsync(email);
-            var locked = await _userManager.IsLockedOutAsync(currentUser);
-
-            if(locked)
-            {
-                return null;
-            }
-
-            var result = await _signInManager.PasswordSignInAsync(currentUser, password, false, false);
-
-            if (result.Succeeded)
-            {
-                return currentUser;
-            }
-            else
-            {
-                return null;
-            }
-        }
+        
     }
 }
