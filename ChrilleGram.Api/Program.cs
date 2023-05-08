@@ -1,9 +1,25 @@
 using ChrilleGram.Api.Data;
+using ChrilleGram.Api.Interfaces;
+using ChrilleGram.Api.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+X509Certificate2 certificate = new X509Certificate2("C:\\Users\\Henri\\source\\repos\\ChrilleGram.UI\\ChrilleGram.Api\\Properties\\certificateGram.pfx", "test123");
+
+builder.WebHost.UseKestrel(options =>
+{
+    options.Listen(IPAddress.Any, 7135, listenOptions =>
+    {
+        listenOptions.UseHttps(certificate);
+    });
+});
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -13,6 +29,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddTransient<DataInitializer>();
+builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<IImageService, ImageService>();
 
 builder.Services.AddIdentityCore<IdentityUser>(options =>
 {
@@ -26,17 +44,20 @@ builder.Services.AddIdentityCore<IdentityUser>(options =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<Context>()
     .AddSignInManager<SignInManager<IdentityUser>>();
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = "Cookies";
-    options.DefaultSignInScheme = "Cookies";
-})
-.AddCookie("Cookies", options =>
-{
-    options.Cookie.Name = "ChrilleGram.Cookie";
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-})
-.AddIdentityCookies();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
 
 var app = builder.Build();
 
