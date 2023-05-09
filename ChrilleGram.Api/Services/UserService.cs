@@ -61,8 +61,9 @@ namespace ChrilleGram.Api.Services
             var claims = new[]
             {
             new Claim(ClaimTypes.NameIdentifier, user.UserName),
-            new Claim(ClaimTypes.Role, userRole.First())
-        };
+            new Claim(ClaimTypes.Role, userRole.First()),
+            new Claim("id", user.Id.ToString())
+            };
 
             var token = new JwtSecurityToken(_configuration["Jwt:Issuer"],
                 _configuration["Jwt:Audience"],

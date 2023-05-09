@@ -12,9 +12,23 @@ namespace ChrilleGram.Api.Data
             _context = context;
         }
 
-        public void SeedData()
+        public async Task SeedData()
         {
-            _context.Database.Migrate();
+            await _context.Database.MigrateAsync();
+            await SeedRoles();
+        }
+
+        private async Task CreateRoleIfNotExists(string rolename)
+        {
+            if (_context.Roles.Any(e => e.Name == rolename))
+                return;
+            await _context.Roles.AddAsync(new IdentityRole { Name = rolename, NormalizedName = rolename });
+            await _context.SaveChangesAsync();
+        }
+        private async Task SeedRoles()
+        {
+            await CreateRoleIfNotExists("Admin");
+            await CreateRoleIfNotExists("User");
         }
     }
 }
