@@ -4,6 +4,9 @@ using ChrilleGram.Api.Models;
 using ChrilleGram.Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ChrilleGram.Api.Controllers
@@ -13,17 +16,20 @@ namespace ChrilleGram.Api.Controllers
     {
         private readonly Context _context;
         private readonly IUserService _userService;
+        private readonly IConfiguration _configuration;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         public UserController(UserManager<IdentityUser> userManager,
         Context context,
         SignInManager<IdentityUser> signInManager,
-        IUserService userService)
+        IUserService userService,
+        IConfiguration configuration)
         {
             _userManager = userManager;
             _context = context;
             _signInManager = signInManager;
             _userService = userService;
+            _configuration = configuration;
         }
 
         [HttpPost("[controller]/[action]")]
@@ -67,7 +73,13 @@ namespace ChrilleGram.Api.Controllers
                 var auth = await _userService.AuthenticateUserAsync(request.Email, request.Password);
                 if (auth != null)
                 {
-                    return Ok(auth);
+                    var jwt = _userService.Generate(auth);
+                    var returnModel = new
+                    {
+                        auth,
+                        jwt
+                    };
+                    return Ok(returnModel);
                 } else
                 {
                     return BadRequest("User does not exist");
@@ -78,6 +90,38 @@ namespace ChrilleGram.Api.Controllers
             }
         }
 
-        
+        [HttpPost("[controller]/[action]")]
+        public async Task<IActionResult> RefreshTokenAsync(string? token)
+        {
+            //var tokenString = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+
+            if(string.IsNullOrEmpty(token))
+            {
+                token = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            }
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = _configuration["Jwt:Issuer"],
+                ValidateAudience = true,
+                ValidAudience = _configuration["Jwt:Audience"],
+                ValidateLifetime = false // token expiration is validated by the issuer
+            }, out SecurityToken validatedToken);
+
+            var jwtToken = (JwtSecurityToken)validatedToken;
+            var userId = jwtToken.Claims.First(x => x.Type == "id").Value;
+            var user = await _userManager.FindByIdAsync(userId);
+
+            var newJwtToken = _userService.Generate(user);
+
+            return Ok(new { token = newJwtToken });
+        }
+
+
     }
 }

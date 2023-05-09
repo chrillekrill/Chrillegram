@@ -5,5 +5,6 @@ namespace ChrilleGram.Api.Interfaces
     public interface IUserService
     {
         Task<IdentityUser?> AuthenticateUserAsync(string email, string password);
+        public string Generate(IdentityUser user);
     }
 }

@@ -1,6 +1,10 @@
 ﻿using ChrilleGram.Api.Data;
 using ChrilleGram.Api.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace ChrilleGram.Api.Services
 {
@@ -44,6 +48,30 @@ namespace ChrilleGram.Api.Services
             {
                 return null;
             }
+        }
+
+        public string Generate(IdentityUser user)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var userRole = _userManager.GetRolesAsync(user).Result;
+
+
+            var claims = new[]
+            {
+            new Claim(ClaimTypes.NameIdentifier, user.UserName),
+            new Claim(ClaimTypes.Role, userRole.First()),
+            new Claim("id", user.Id.ToString())
+            };
+
+            var token = new JwtSecurityToken(_configuration["Jwt:Issuer"],
+                _configuration["Jwt:Audience"],
+                claims,
+                expires: DateTime.Now.AddDays(30),
+                signingCredentials: credentials);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

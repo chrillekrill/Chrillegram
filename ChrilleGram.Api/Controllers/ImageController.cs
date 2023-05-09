@@ -1,4 +1,5 @@
 ﻿using ChrilleGram.Api.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using System.IO;
 namespace ChrilleGram.Api.Controllers
 {
     [ApiController]
+    [Authorize]
     public class ImageController : Controller
     {
         private readonly Context _context;
