@@ -1,0 +1,73 @@
+﻿@page "/"
+
+@using ChrilleGram.UI.Data.Services
+@using ChrilleGram.UI.Models;
+@using Newtonsoft.Json
+@inject UserService UserService
+@inject NavigationManager NavManager
+
+<h1>Login</h1>
+
+<form @onsubmit="HandleSubmit">
+    <label for="email">Email</label>
+    <input @bind="Email" id="email" type="email" />
+    <label for="password">Password</label>
+    <input @bind="Password" id="password" type="password" />
+
+    <button class="btn btn-success" type="submit">Login</button>
+</form>
+
+@code {
+    private string Email { get; set; }
+    private string Password { get; set; }
+    private bool Status { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        Status = await UserService.CheckStatus();
+
+        if (Status)
+        {
+            var jwt = await SecureStorage.Default.GetAsync("jwt");
+            if (!string.IsNullOrEmpty(jwt))
+            {
+                var refreshedJwt = await UserService.RefreshJwt(jwt);
+
+                await SecureStorage.Default.SetAsync("jwt", refreshedJwt);
+
+                NavManager.NavigateTo("/index");
+            }
+        }
+        else
+        {
+            await App.Current.MainPage.DisplayAlert("Server down", "The server is down at the moment, please try at another time", "close");
+        }
+
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (Status)
+        {
+            var res = await UserService.Login(Email, Password);
+
+            if (string.IsNullOrEmpty(res))
+            {
+                await App.Current.MainPage.DisplayAlert("Oops", "Invalid username or password", "close");
+            }
+            else
+            {
+                var resJson = JsonConvert.DeserializeObject<UserRequest>(res);
+
+                await SecureStorage.Default.SetAsync("jwt", resJson.Jwt);
+
+                NavManager.NavigateTo("/Index");
+            }
+        }
+        else
+        {
+            await App.Current.MainPage.DisplayAlert("Server down", "The server is down at the moment, please try at another time", "close");
+        }
+    }
+}

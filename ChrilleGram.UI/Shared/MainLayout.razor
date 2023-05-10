@@ -1,8 +1,14 @@
-﻿@inherits LayoutComponentBase
+﻿@using ChrilleGram.UI.Data.Services;
+@inherits LayoutComponentBase
+@inject UserService UserService
+
 
 <div class="page">
     <div class="sidebar">
-        <NavMenu />
+        @if (loggedIn && Status)
+        {
+            <NavMenu />
+        }
     </div>
 
     <main>
@@ -15,3 +21,42 @@
         </article>
     </main>
 </div>
+
+
+@code {
+    private bool loggedIn;
+    private bool Status { get; set; }
+
+
+    protected override async void OnInitialized()
+    {
+        Status = await UserService.CheckStatus();
+
+        var jwt = await SecureStorage.Default.GetAsync("jwt");
+
+        if (string.IsNullOrEmpty(jwt))
+        {
+            loggedIn = false;
+        }
+        else
+        {
+            loggedIn = true;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var jwt = await SecureStorage.Default.GetAsync("jwt");
+
+        if (string.IsNullOrEmpty(jwt) && loggedIn)
+        {
+            loggedIn = false;
+            StateHasChanged();
+        }
+        else if (!string.IsNullOrEmpty(jwt) && !loggedIn)
+        {
+            loggedIn = true;
+            StateHasChanged();
+        }
+    }
+}
