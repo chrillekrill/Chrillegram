@@ -18,6 +18,27 @@ namespace ChrilleGram.UI.Data.Services
             ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
         });
 
+        public async Task<RegisterModel> Register(string email, string username, string password)
+        {
+            var registerRequest = new
+            {
+                Email = email,
+                Username= username,
+                Password = password
+            };
+
+            var json = JsonConvert.SerializeObject(registerRequest);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var res = await client.PostAsync($"{Uri}/User/CreateUser", content);
+
+            var model = new RegisterModel()
+            {
+                Content = await res.Content.ReadAsStringAsync(),
+                StatusCode = res.StatusCode
+            };
+            return model;
+        }
         public async Task<string> Login(string email, string password)
         {
 
@@ -58,7 +79,7 @@ namespace ChrilleGram.UI.Data.Services
         {
             var jwtRequest = new
             {
-                jwt = jwt,
+                jwt,
             };
 
             var json = JsonConvert.SerializeObject(jwtRequest);
@@ -76,6 +97,29 @@ namespace ChrilleGram.UI.Data.Services
                 return token;
             }
             else
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> GetUsername(string jwt)
+        {
+            var jwtRequest = new
+            {
+                jwt
+            };
+
+            var json = JsonConvert.SerializeObject(jwtRequest);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var res = await client.PostAsync($"{Uri}/User/GetUserNameFromJwt", content);
+
+            if (res.IsSuccessStatusCode)
+            {
+                var name = await res.Content.ReadAsStringAsync();
+
+                return name;
+            } else
             {
                 return null;
             }

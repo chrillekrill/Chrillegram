@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -34,34 +35,53 @@ namespace ChrilleGram.Api.Controllers
         }
 
         [HttpPost("[controller]/[action]")]
-        public async Task<IActionResult> CreateUser(string email, string userName, string password)
+        public async Task<IActionResult> CreateUser([FromBody] RegisterRequest register)
         {
-            var passWordCheck = password.Any(x => char.IsLetter(x));
-            if (_userManager.FindByEmailAsync(email).Result != null)
-                return BadRequest("User already exists");
-            if (!Regex.IsMatch(userName, @"^[a-zA-Z]+$"))
+            var passWordCheck = register.Password.Any(x => char.IsLetter(x));
+            if (await _userManager.FindByEmailAsync(register.Email) != null)
+                return BadRequest("Email already in use");
+            if (await _userManager.FindByNameAsync(register.Username) != null)
+                return BadRequest("Username is already taken");
+            if (!Regex.IsMatch(register.Username, @"^[a-zA-Z]+$"))
                 return BadRequest("Please enter a valid username");
             if (!passWordCheck)
                 return BadRequest("Password must contain letters");
 
             var user = new IdentityUser
             {
-                UserName = userName,
-                Email = email,
+                UserName = register.Username,
+                Email = register.Email,
                 EmailConfirmed = true
             };
 
-            var created = await _userManager.CreateAsync(user, password);
-
-            await _context.SaveChangesAsync();
+            var created = await _userManager.CreateAsync(user, register.Password);
+            await _userManager.AddToRoleAsync(user, "User");
 
             if(created.Succeeded)
             {
                 await _context.SaveChangesAsync();
-                return Ok("User created");
+
+                var currentUser = await _userManager.FindByEmailAsync(register.Email);
+
+                var jwt = _userService.Generate(currentUser);
+
+                var returnModel = new
+                {
+                    currentUser,
+                    jwt
+                };
+
+                await _context.SaveChangesAsync();
+
+                return Ok(returnModel);
             } else
             {
-                return BadRequest("Something went wrong, please check the error message and contact the support: " + created.Errors);
+                var errorModel = new
+                {
+                    ErrorMessage = "Something went wrong, please check the error message and contact the support: " + created.Errors
+                };
+
+                return BadRequest(errorModel);
             }
             
         }
@@ -74,7 +94,7 @@ namespace ChrilleGram.Api.Controllers
                 var auth = await _userService.AuthenticateUserAsync(request.Email, request.Password);
                 if (auth != null)
                 {
-                    var jwt = _userService.Generate(auth);
+                    var jwt = await _userService.Generate(auth);
                     var returnModel = new
                     {
                         auth,
@@ -123,7 +143,7 @@ namespace ChrilleGram.Api.Controllers
                 var userId = jwtToken.Claims.First(x => x.Type == "id").Value;
                 var user = await _userManager.FindByIdAsync(userId);
 
-                var newJwtToken = _userService.Generate(user);
+                var newJwtToken = await _userService.Generate(user);
 
                 return Ok(new { token = newJwtToken });
             } catch(Exception ex)
@@ -137,6 +157,31 @@ namespace ChrilleGram.Api.Controllers
         public IActionResult CheckStatus()
         {
             return Ok();
+        }
+
+        [HttpPost("[controller]/[action]")]
+        public async Task<IActionResult?> GetUserNameFromJwt([FromBody] JwtRequest? jwt)
+        {
+            var tokenString = "";
+
+            if (string.IsNullOrEmpty(jwt?.Jwt))
+            {
+                tokenString = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            }
+            else
+            {
+                tokenString = jwt.Jwt;
+            }
+
+            var userId = await _userService.GetUserIdFromToken(tokenString);
+
+            if(userId == null) { return null; }
+
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if(user == null) { return null; }
+
+            return Ok(user.UserName);
         }
     }
 }
