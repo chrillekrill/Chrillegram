@@ -2,6 +2,7 @@
 using ChrilleGram.Api.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -28,7 +29,7 @@ namespace ChrilleGram.Api.Services
         {
             var currentUser = await _userManager.FindByEmailAsync(email);
 
-            if(currentUser == null)
+            if (currentUser == null)
             {
                 return null;
             }
@@ -50,12 +51,12 @@ namespace ChrilleGram.Api.Services
             }
         }
 
-        public string Generate(IdentityUser user)
+        public async Task<string> Generate(IdentityUser user)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            var userRole = _userManager.GetRolesAsync(user).Result;
+            var userRole = await _userManager.GetRolesAsync(user);
 
 
             var claims = new[]
@@ -73,5 +74,20 @@ namespace ChrilleGram.Api.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        public async Task<string> GetUserIdFromToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var decodedToken = await Task.Run(() => tokenHandler.ReadJwtToken(token));
+            var idClaim = decodedToken.Claims.FirstOrDefault(c => c.Type == "id");
+
+            if (idClaim == null)
+            {
+                throw new InvalidOperationException("ID claim not found in token.");
+            }
+
+            return idClaim.Value;
+        }
+
     }
 }

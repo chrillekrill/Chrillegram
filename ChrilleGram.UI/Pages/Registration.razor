@@ -1,0 +1,68 @@
+﻿@page "/Registration"
+@using ChrilleGram.UI.Data.Services;
+@using ChrilleGram.UI.Models;
+@using Newtonsoft.Json;
+@inject UserService UserService
+@inject NavigationManager NavManager
+@inject IDispatcher Dispatcher
+
+<h3>Registration</h3>
+
+<form @onsubmit="HandleSubmit">
+    <label for="email">Email</label>
+    <input @bind="Email" id="email" type="email" />
+    <label for="email">Username</label>
+    <input @bind="Username" id="username" type="text" />
+    <label for="password">Password</label>
+    <input @bind="Password" id="password" type="password" />
+
+    <button class="btn btn-success" type="submit">Register</button>
+</form>
+
+@code {
+    private string Email { get; set; }
+    private string Username { get; set; }
+    private string Password { get; set; }
+    private bool Status { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Status = await UserService.CheckStatus();
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (Email != null && Username != null && Password != null)
+        {
+            if (Status)
+            {
+                var res = await UserService.Register(Email, Username, Password);
+
+                if (res.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    var jwt = JsonConvert.DeserializeObject<UserRequest>(res.Content).Jwt;
+
+                    await SecureStorage.Default.SetAsync("jwt", jwt);
+
+                    var tcs = new TaskCompletionSource<bool>();
+
+                    Dispatcher.Dispatch(async () =>
+                    {
+                        await App.Current.MainPage.DisplayAlert("Thank you", "Thank you for registering", "close");
+                        tcs.TrySetResult(true);
+                    });
+
+                    await tcs.Task;
+
+                    NavManager.NavigateTo("/Index");
+                }
+                else if (res.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    var msg = JsonConvert.DeserializeObject<ErrorRequest>(res.Content).ErrorMessage;
+
+                    await App.Current.MainPage.DisplayAlert("Oops", msg, "close");
+                }
+            }
+        }
+    }
+}

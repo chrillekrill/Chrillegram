@@ -1,8 +1,10 @@
-﻿@inject NavigationManager NavManager
+﻿@using ChrilleGram.UI.Data.Services;
+@inject NavigationManager NavManager
+@inject UserService UserService
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">ChrilleGram.UI</a>
+        <a class="navbar-brand" href="">@UserName</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -29,6 +31,18 @@
 
     private bool loggedIn;
 
+    private string userName;
+
+    private string UserName
+    {
+        get => userName;
+        set
+        {
+            userName = value;
+            StateHasChanged(); // Trigger a UI update
+        }
+    }
+
     private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
     private void ToggleNavMenu()
@@ -47,12 +61,14 @@
     {
         var jwt = await SecureStorage.Default.GetAsync("jwt");
 
-        if (!string.IsNullOrEmpty(jwt))
+        if (string.IsNullOrEmpty(jwt))
         {
             loggedIn = false;
         } else
         {
             loggedIn = true;
+            var name = await UserService.GetUsername(jwt);
+            UserName = name;
         }
     }
 }
