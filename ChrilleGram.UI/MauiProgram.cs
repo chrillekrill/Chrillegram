@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using ChrilleGram.UI.Data;
+using ChrilleGram.UI.Data.Services;
 
 namespace ChrilleGram.UI;
 
@@ -22,7 +22,7 @@ public static class MauiProgram
 		builder.Logging.AddDebug();
 #endif
 
-		builder.Services.AddSingleton<WeatherForecastService>();
+		builder.Services.AddSingleton<UserService>();
 
 		return builder.Build();
 	}

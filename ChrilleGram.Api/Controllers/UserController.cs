@@ -5,6 +5,7 @@ using ChrilleGram.Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -91,37 +92,51 @@ namespace ChrilleGram.Api.Controllers
         }
 
         [HttpPost("[controller]/[action]")]
-        public async Task<IActionResult> RefreshTokenAsync(string? token)
+        public async Task<IActionResult> RefreshTokenAsync([FromBody] JwtRequest? token)
         {
-            //var tokenString = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-
-            if(string.IsNullOrEmpty(token))
+            try
             {
-                token = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                var tokenString = "";
+
+                if (string.IsNullOrEmpty(token?.Jwt))
+                {
+                    tokenString = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                } else
+                {
+                    tokenString = token.Jwt;
+                }
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+                tokenHandler.ValidateToken(tokenString, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = _configuration["Jwt:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = _configuration["Jwt:Audience"],
+                    ValidateLifetime = false // token expiration is validated by the issuer
+                }, out SecurityToken validatedToken);
+
+                var jwtToken = (JwtSecurityToken)validatedToken;
+                var userId = jwtToken.Claims.First(x => x.Type == "id").Value;
+                var user = await _userManager.FindByIdAsync(userId);
+
+                var newJwtToken = _userService.Generate(user);
+
+                return Ok(new { token = newJwtToken });
+            } catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
-            tokenHandler.ValidateToken(token, new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidIssuer = _configuration["Jwt:Issuer"],
-                ValidateAudience = true,
-                ValidAudience = _configuration["Jwt:Audience"],
-                ValidateLifetime = false // token expiration is validated by the issuer
-            }, out SecurityToken validatedToken);
-
-            var jwtToken = (JwtSecurityToken)validatedToken;
-            var userId = jwtToken.Claims.First(x => x.Type == "id").Value;
-            var user = await _userManager.FindByIdAsync(userId);
-
-            var newJwtToken = _userService.Generate(user);
-
-            return Ok(new { token = newJwtToken });
+            
         }
 
-
+        [HttpGet("[controller]/[action]")]
+        public IActionResult CheckStatus()
+        {
+            return Ok();
+        }
     }
 }

@@ -1,7 +1,23 @@
-﻿@page "/"
+﻿@page "/Index"
+
+@using ChrilleGram.UI.Data.Services;
+
+@inject UserService UserService
+@inject NavigationManager NavManager
 
 <h1>Hello, world!</h1>
 
 Welcome to your new app.
 
 <SurveyPrompt Title="How is Blazor working for you?" />
+
+@code {
+    protected override async void OnInitialized()
+    {
+        var jwt = await SecureStorage.Default.GetAsync("jwt");
+        if(string.IsNullOrEmpty(jwt))
+        {
+            NavManager.NavigateTo("/");
+        }
+    }
+}
