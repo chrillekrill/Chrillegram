@@ -1,0 +1,30 @@
+﻿@page "/"
+
+@using ChrilleGram.UI.Data.Services
+@using ChrilleGram.UI.Models;
+@using Newtonsoft.Json
+@inject UserService UserService
+@inject NavigationManager NavManager
+
+<div style="display: flex; align-items: center; justify-content: center; height: 100vh;"><img src="Images/spinner.gif" /></div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+
+        var jwt = await SecureStorage.Default.GetAsync("jwt");
+
+        if (!string.IsNullOrEmpty(jwt))
+        {
+            var refreshedJwt = await UserService.RefreshJwt(jwt);
+
+            await SecureStorage.Default.SetAsync("jwt", refreshedJwt);
+
+            NavManager.NavigateTo("/index");
+        } else
+        {
+            NavManager.NavigateTo("/login");
+        }
+
+    }
+}
