@@ -23,7 +23,8 @@ public static class MauiProgram
 #endif
 
 		builder.Services.AddSingleton<UserService>();
+        builder.Services.AddSingleton<ImageService>();
 
-		return builder.Build();
+        return builder.Build();
 	}
 }
