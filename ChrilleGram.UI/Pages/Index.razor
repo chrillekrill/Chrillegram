@@ -1,7 +1,8 @@
 ﻿@page "/Index"
 
-@using ChrilleGram.UI.Data.Services;
-@using ChrilleGram.UI.Models;
+@using ChrilleGram.UI.Data.Services
+@using ChrilleGram.UI.Models
+@using Microsoft.Maui.Controls
 
 @inject UserService UserService
 @inject ImageService ImageService
@@ -12,25 +13,42 @@
 </div>
 
 <div class="row">
-    @foreach (var path in ImagePaths)
+    @foreach (var img in Images)
     {
-        <p>@path.Path</p>
+        <img src="@($"data:image/png;base64,{Convert.ToBase64String(img)}")" />
     }
 </div>
 
 @code {
     public List<ImagePath> ImagePaths { get; set; } = new List<ImagePath>();
+    public List<byte[]> Images { get; set; } = new List<byte[]>();
 
-    protected override async void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        var jwt = await SecureStorage.Default.GetAsync("jwt");
-        if (string.IsNullOrEmpty(jwt))
+        try
         {
-            NavManager.NavigateTo("/");
-        } else
+            var jwt = await SecureStorage.Default.GetAsync("jwt");
+            if (string.IsNullOrEmpty(jwt))
+            {
+                NavManager.NavigateTo("/");
+            }
+            else
+            {
+                var res = await ImageService.GetAllImagePaths(jwt);
+                ImagePaths = res.ToList();
+
+                var tasks = ImagePaths.Select(async x =>
+                {
+                    var image = await ImageService.GetImage(x.Path, jwt);
+                    return image;
+                });
+                var results = await Task.WhenAll(tasks);
+                Images.AddRange(results);
+            }
+        }
+        catch (Exception ex)
         {
-            var res = await ImageService.GetAllImagePaths(jwt);
-            ImagePaths = res.ToList();
+            Console.WriteLine($"An error occurred while retrieving the image paths: {ex.Message}");
         }
     }
 }

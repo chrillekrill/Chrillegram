@@ -27,5 +27,16 @@ namespace ChrilleGram.UI.Data.Services
 
             return model;
         }
+
+        public async Task<byte[]> GetImage(string path, string jwt)
+        {
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+            var res = await client.GetAsync($"{Uri}/Image/GetImage?imagepath=" + path);
+ 
+            var img = await res.Content.ReadAsByteArrayAsync();
+
+             return img;
+        }
     }
 }
