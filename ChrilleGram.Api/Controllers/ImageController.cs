@@ -1,10 +1,12 @@
 ﻿using ChrilleGram.Api.Data;
+using ChrilleGram.Api.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using System.Drawing;
 using System.IO;
+using System.IO.Compression;
 
 namespace ChrilleGram.Api.Controllers
 {
@@ -13,9 +15,11 @@ namespace ChrilleGram.Api.Controllers
     public class ImageController : Controller
     {
         private readonly Context _context;
-        public ImageController(Context context)
+        private readonly IUserService _userService;
+        public ImageController(Context context, IUserService userService)
         {
             _context = context;
+            _userService = userService;
         }
 
         [HttpGet("[controller]/[action]")]
@@ -25,11 +29,10 @@ namespace ChrilleGram.Api.Controllers
 
             return Ok(model);
         }
-
         [HttpGet("[controller]/[action]")]
         public IActionResult GetImage(string imagePath)
         {
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            var uploadsFolder = Directory.GetCurrentDirectory();
 
             var filePath = Path.Combine(uploadsFolder, imagePath);
 
@@ -75,11 +78,13 @@ namespace ChrilleGram.Api.Controllers
         }
 
         [HttpPost("[controller]/[action]")]
-        public async Task<IActionResult> UploadFile(IFormFile file)
+        public async Task<IActionResult> UploadFile(IFormFile file, string jwt)
         {
             // Check if the file is not null and has content
             if (file != null && file.Length > 0)
             {
+                var uploaderId = await _userService.GetUserIdFromToken(jwt);
+
                 // Get the file name and extension
                 var fileName = Path.GetFileName(file.FileName);
                 var fileExtension = Path.GetExtension(fileName);
@@ -97,7 +102,15 @@ namespace ChrilleGram.Api.Controllers
                 }
 
                 // Get the path of the file where you want to save the uploaded file
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+                var relativeFolderPath = Path.Combine(uploadsFolder, uploaderId.ToString());
+                var filePath = Path.Combine(relativeFolderPath, $"{fileNameWithoutExtension}-{uniqueFileName}");
+
+                var uploaderFolderPath = Path.Combine(uploadsFolder, relativeFolderPath);
+                if (!Directory.Exists(uploaderFolderPath))
+                {
+                    Directory.CreateDirectory(uploaderFolderPath);
+                }
 
                 // Save the file to the file path
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
@@ -109,10 +122,10 @@ namespace ChrilleGram.Api.Controllers
                 if (System.IO.File.Exists(filePath))
                 {
                     // Return a success response
-
+                    var fileToSave = $"wwwroot/uploads/{uploaderId}/{fileNameWithoutExtension}-{uniqueFileName}";
                     var img = new Entities.Image();
 
-                    img.Path = filePath;
+                    img.Path = fileToSave;
 
                     await _context.Image.AddAsync(img);
 
