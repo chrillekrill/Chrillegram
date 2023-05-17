@@ -13,33 +13,49 @@
 </div>
 
 <div class="row">
-    @foreach (var img in Images)
+    @foreach (var (img, index) in Images.Select((img, index) => (img, index)))
     {
-        <img src="@($"data:image/png;base64,{Convert.ToBase64String(img)}")" />
+        if (img != null)
+        {
+            <div style="width: 120px; height: 120px" class="mb-4">
+                <img style="width:100%; height: 100%; object-fit: cover;" src="@($"data:image/png;base64,{Convert.ToBase64String(img)}")" @onclick="() => OnImageClick(ImagePaths[index].Path)" />
+            </div>
+        }
     }
 </div>
 
 @code {
     public List<ImagePath> ImagePaths { get; set; } = new List<ImagePath>();
     public List<byte[]> Images { get; set; } = new List<byte[]>();
+    public string Jwt { get; set; }
+
+    private async Task OnImageClick(string path)
+    {
+        var userId = await UserService.GetUserId(Jwt);
+
+        var trimmedPath = path.Substring($"wwwroot/uploads/{userId}/".Length);
+        var url = "/fullImage/" + trimmedPath;
+        NavManager.NavigateTo(url);
+
+    }
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var jwt = await SecureStorage.Default.GetAsync("jwt");
-            if (string.IsNullOrEmpty(jwt))
+            Jwt = await SecureStorage.Default.GetAsync("jwt");
+            if (string.IsNullOrEmpty(Jwt))
             {
                 NavManager.NavigateTo("/");
             }
             else
             {
-                var res = await ImageService.GetAllImagePaths(jwt);
+                var res = await ImageService.GetAllImagePaths(Jwt);
                 ImagePaths = res.ToList();
 
                 var tasks = ImagePaths.Select(async x =>
                 {
-                    var image = await ImageService.GetImage(x.Path, jwt);
+                    var image = await ImageService.GetImage(x.Path, Jwt);
                     return image;
                 });
                 var results = await Task.WhenAll(tasks);

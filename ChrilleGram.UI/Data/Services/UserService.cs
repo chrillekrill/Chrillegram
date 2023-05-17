@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text.Json;
 using Newtonsoft.Json;
 using ChrilleGram.UI.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace ChrilleGram.UI.Data.Services
 {
@@ -120,6 +121,30 @@ namespace ChrilleGram.UI.Data.Services
 
                 return name;
             } else
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> GetUserId(string jwt)
+        {
+            var jwtRequest = new
+            {
+                jwt
+            };
+
+            var json = JsonConvert.SerializeObject(jwtRequest);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var res = await client.PostAsync($"{Uri}/User/GetUserIdFromJwt", content);
+
+            if (res.IsSuccessStatusCode)
+            {
+                var id = await res.Content.ReadAsStringAsync();
+
+                return id;
+            }
+            else
             {
                 return null;
             }

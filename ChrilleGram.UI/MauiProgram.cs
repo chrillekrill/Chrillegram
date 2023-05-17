@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using ChrilleGram.UI.Data.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace ChrilleGram.UI;
 

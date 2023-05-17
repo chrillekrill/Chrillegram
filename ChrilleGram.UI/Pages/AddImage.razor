@@ -1,17 +1,25 @@
-﻿@page "/addImage"
+﻿@page "/AddImage"
 @using ChrilleGram.UI.Data.Services;
 @using ChrilleGram.UI.Models;
 @inject ImageService imageService
+@inject NavigationManager NavManager
+
+<button @onclick="GoBack" class="btn mb-2" style="background-color: transparent; outline: none;">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16" style="width: 16px; height: 16px; transform: scale(2);">
+        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
+    </svg>
+</button>
 
 <h3>Upload an image</h3>
 
-<InputFile OnChange="@LoadFiles"/>
+<InputFile OnChange="@LoadFiles" />
 
-@if(file.File != null) {
-<EditForm Model="@file" OnSubmit="@Upload">
+@if (file.File != null)
+{
+    <EditForm Model="@file" OnSubmit="@Upload">
 
-    <button type="submit" class="btn btn-primary">Upload image</button>
-</EditForm>
+        <button type="submit" class="btn btn-primary">Upload image</button>
+    </EditForm>
 }
 
 @code {
@@ -23,7 +31,7 @@
         string[] allowedExtensions = { ".bmp", ".gif", ".jpeg", ".jpg", ".png", ".svg", ".tiff", ".webp", };
 
         var extension = Path.GetExtension(file.File.Name);
-        
+
         if (!allowedExtensions.Contains(extension.ToLower()))
         {
             file = new FileModel();
@@ -35,11 +43,16 @@
     {
         var jwt = await SecureStorage.Default.GetAsync("jwt");
 
-        if(file.File != null)
+        if (file.File != null)
         {
             await imageService.UploadImage(file.File, jwt);
-        }  
+        }
 
         file = new FileModel();
+    }
+
+    private void GoBack()
+    {
+        NavManager.NavigateTo("/Index");
     }
 }

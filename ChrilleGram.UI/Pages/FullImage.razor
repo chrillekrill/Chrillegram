@@ -1,0 +1,45 @@
+﻿@page "/FullImage/{imgPath}"
+@using ChrilleGram.UI.Data.Services;
+
+@inject ImageService ImageService
+@inject NavigationManager NavManager
+@inject UserService UserService
+
+<div>
+    <button @onclick="GoBack" class="btn mb-2" style="background-color: transparent; outline: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16" style="width: 16px; height: 16px; transform: scale(2);">
+            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
+        </svg>
+    </button>
+
+    @if (Image != null)
+    {
+        <img style="max-width:100%" src="@($"data:image/png;base64,{Convert.ToBase64String(Image)}")" />
+    }
+</div>
+
+
+@code {
+    [Parameter]
+    public string ImgPath { get; set; }
+
+    public byte[] Image { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var jwt = await SecureStorage.Default.GetAsync("jwt");
+
+        var userId = await UserService.GetUserId(jwt);
+        var newPath = $"wwwroot/uploads/{userId}/{ImgPath}";
+
+
+        var getImage = await ImageService.GetImage(newPath, jwt);
+
+        Image = getImage;
+    }
+
+    private void GoBack()
+    {
+        NavManager.NavigateTo("/Index");
+    }
+}
