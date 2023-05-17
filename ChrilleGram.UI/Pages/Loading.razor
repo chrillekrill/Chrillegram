@@ -9,22 +9,31 @@
 <div style="display: flex; align-items: center; justify-content: center; height: 100vh;"><img src="Images/spinner.gif" /></div>
 
 @code {
+    public bool Status { get; set; }
     protected override async Task OnInitializedAsync()
     {
 
         var jwt = await SecureStorage.Default.GetAsync("jwt");
+        Status = await UserService.CheckStatus();
 
-        if (!string.IsNullOrEmpty(jwt))
+        if (Status)
         {
-            var refreshedJwt = await UserService.RefreshJwt(jwt);
 
-            await SecureStorage.Default.SetAsync("jwt", refreshedJwt);
+            if (!string.IsNullOrEmpty(jwt))
+            {
+                var refreshedJwt = await UserService.RefreshJwt(jwt);
 
-            NavManager.NavigateTo("/index");
+                await SecureStorage.Default.SetAsync("jwt", refreshedJwt);
+
+                NavManager.NavigateTo("/index");
+            }
+            else
+            {
+                NavManager.NavigateTo("/login");
+            }
         } else
         {
-            NavManager.NavigateTo("/login");
+            await App.Current.MainPage.DisplayAlert("Server down", "The server is down at the moment, please try at another time", "close");
         }
-
     }
 }

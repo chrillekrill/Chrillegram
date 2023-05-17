@@ -5,6 +5,11 @@
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">@UserName</a>
+        <button class="btn btn-success" @onclick="AddImagePage">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="white" class="bi bi-plus" viewBox="0 0 16 16" style="width: 16px; height: 16px; transform: scale(2);">
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"></path>
+            </svg>
+        </button>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -45,6 +50,11 @@
 
     private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
+    private void AddImagePage()
+    {
+        NavManager.NavigateTo("/addImage");
+    }
+
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
@@ -64,7 +74,8 @@
         if (string.IsNullOrEmpty(jwt))
         {
             loggedIn = false;
-        } else
+        }
+        else
         {
             loggedIn = true;
             var name = await UserService.GetUsername(jwt);

@@ -1,0 +1,45 @@
+﻿@page "/addImage"
+@using ChrilleGram.UI.Data.Services;
+@using ChrilleGram.UI.Models;
+@inject ImageService imageService
+
+<h3>Upload an image</h3>
+
+<InputFile OnChange="@LoadFiles"/>
+
+@if(file.File != null) {
+<EditForm Model="@file" OnSubmit="@Upload">
+
+    <button type="submit" class="btn btn-primary">Upload image</button>
+</EditForm>
+}
+
+@code {
+    private FileModel file = new FileModel();
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        file.File = e.File;
+        string[] allowedExtensions = { ".bmp", ".gif", ".jpeg", ".jpg", ".png", ".svg", ".tiff", ".webp", };
+
+        var extension = Path.GetExtension(file.File.Name);
+        
+        if (!allowedExtensions.Contains(extension.ToLower()))
+        {
+            file = new FileModel();
+            await App.Current.MainPage.DisplayAlert("Only images", "Only image files are allowed to be uploaded", "close");
+        }
+    }
+
+    private async Task Upload()
+    {
+        var jwt = await SecureStorage.Default.GetAsync("jwt");
+
+        if(file.File != null)
+        {
+            await imageService.UploadImage(file.File, jwt);
+        }  
+
+        file = new FileModel();
+    }
+}
