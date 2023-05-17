@@ -78,30 +78,24 @@ namespace ChrilleGram.Api.Controllers
         }
 
         [HttpPost("[controller]/[action]")]
-        public async Task<IActionResult> UploadFile(IFormFile file, string jwt)
+        public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery(Name = "jwt")] string jwt)
         {
-            // Check if the file is not null and has content
             if (file != null && file.Length > 0)
             {
                 var uploaderId = await _userService.GetUserIdFromToken(jwt);
 
-                // Get the file name and extension
                 var fileName = Path.GetFileName(file.FileName);
                 var fileExtension = Path.GetExtension(fileName);
 
-                // Generate a unique file name
                 var uniqueFileName = Guid.NewGuid().ToString() + fileExtension;
 
-                // Get the path of the folder where you want to save the file
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
 
-                // Create the directory if it doesn't exist
                 if (!Directory.Exists(uploadsFolder))
                 {
                     Directory.CreateDirectory(uploadsFolder);
                 }
 
-                // Get the path of the file where you want to save the uploaded file
                 var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
                 var relativeFolderPath = Path.Combine(uploadsFolder, uploaderId.ToString());
                 var filePath = Path.Combine(relativeFolderPath, $"{fileNameWithoutExtension}-{uniqueFileName}");
@@ -112,16 +106,13 @@ namespace ChrilleGram.Api.Controllers
                     Directory.CreateDirectory(uploaderFolderPath);
                 }
 
-                // Save the file to the file path
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(fileStream);
                 }
 
-                // Check if the file was created
                 if (System.IO.File.Exists(filePath))
                 {
-                    // Return a success response
                     var fileToSave = $"wwwroot/uploads/{uploaderId}/{fileNameWithoutExtension}-{uniqueFileName}";
                     var img = new Entities.Image();
 
@@ -135,12 +126,10 @@ namespace ChrilleGram.Api.Controllers
                 }
                 else
                 {
-                    // Return a server error response if the file was not created
                     return StatusCode(StatusCodes.Status500InternalServerError, "Failed to save file.");
                 }
             }
 
-            // Return a bad request response if the file is null or has no content
             return BadRequest("Please provide a file to upload!");
         }
     }

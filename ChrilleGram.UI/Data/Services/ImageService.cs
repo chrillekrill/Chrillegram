@@ -1,4 +1,6 @@
 ﻿using ChrilleGram.UI.Models;
+using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Maui.Storage;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -37,6 +39,19 @@ namespace ChrilleGram.UI.Data.Services
             var img = await res.Content.ReadAsByteArrayAsync();
 
              return img;
+        }
+
+        public async Task<bool> UploadImage(IBrowserFile file, string jwt)
+        {
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+            
+            var content = new MultipartFormDataContent();
+            var streamContent = new StreamContent(file.OpenReadStream());
+            content.Add(streamContent, "file", file.Name);
+
+            var res = await client.PostAsync($"{Uri}/Image/UploadFile?jwt={jwt}", content);
+
+            return res.IsSuccessStatusCode;
         }
     }
 }
