@@ -183,5 +183,26 @@ namespace ChrilleGram.Api.Controllers
 
             return Ok(user.UserName);
         }
+
+        [HttpPost("[controller]/[action]")]
+        public async Task<IActionResult?> GetUserIdFromJwt([FromBody] JwtRequest? jwt)
+        {
+            var tokenString = "";
+
+            if (string.IsNullOrEmpty(jwt?.Jwt))
+            {
+                tokenString = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            }
+            else
+            {
+                tokenString = jwt.Jwt;
+            }
+
+            var userId = await _userService.GetUserIdFromToken(tokenString);
+
+            if (userId == null) { return null; }
+
+            return Ok(userId);
+        }
     }
 }
