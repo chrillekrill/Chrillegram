@@ -63,7 +63,7 @@ namespace ChrilleGram.Api.Controllers
 
                 var currentUser = await _userManager.FindByEmailAsync(register.Email);
 
-                var jwt = _userService.Generate(currentUser);
+                var jwt = await _userService.Generate(currentUser);
 
                 var returnModel = new
                 {
