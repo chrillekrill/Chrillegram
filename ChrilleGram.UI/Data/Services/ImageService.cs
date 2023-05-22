@@ -16,14 +16,15 @@ namespace ChrilleGram.UI.Data.Services
         private static readonly string Uri = "https://83.227.19.162:7135";
         private static readonly HttpClient client = new HttpClient(new HttpClientHandler()
         {
-            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+            MaxRequestContentBufferSize = 5000000
         });
 
         public async Task<ICollection<ImagePath>> GetAllImagePaths(string jwt)
         {
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
 
-            var res = await client.GetAsync($"{Uri}/Image/GetAll");
+            var res = await client.GetAsync($"{Uri}/Image/GetAll?jwt=" + jwt);
 
             var model = JsonConvert.DeserializeObject<List<ImagePath>>(await res.Content.ReadAsStringAsync());
 
@@ -46,7 +47,7 @@ namespace ChrilleGram.UI.Data.Services
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
             
             var content = new MultipartFormDataContent();
-            var streamContent = new StreamContent(file.OpenReadStream());
+            var streamContent = new StreamContent(file.OpenReadStream(5000000));
             content.Add(streamContent, "file", file.Name);
 
             var res = await client.PostAsync($"{Uri}/Image/UploadFile?jwt={jwt}", content);

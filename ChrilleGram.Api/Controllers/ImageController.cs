@@ -23,9 +23,11 @@ namespace ChrilleGram.Api.Controllers
         }
 
         [HttpGet("[controller]/[action]")]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(string jwt)
         {
-            var model = await _context.Image.ToListAsync();
+            var uid = await _userService.GetUserIdFromToken(jwt);
+
+            var model = await _context.Image.Where(x => x.Path.Contains(uid)).ToListAsync();
 
             return Ok(model);
         }
